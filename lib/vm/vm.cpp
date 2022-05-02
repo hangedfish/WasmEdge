@@ -41,7 +41,7 @@ void VM::unsafeInitVM() {
     ImpObjs.insert({HostRegistration::WasmEdge_Process, std::move(ProcMod)});
   }
   if (Conf.hasHostRegistration(HostRegistration::WasiNN)) {
-    std::unique_ptr<Runtime::ImportObject> WasiNNMod =
+    std::unique_ptr<Runtime::Instance::ModuleInstance> WasiNNMod =
         std::make_unique<Host::WasiNNModule>();
     ExecutorEngine.registerModule(StoreRef, *WasiNNMod.get());
     ImpObjs.insert({HostRegistration::WasiNN, std::move(WasiNNMod)});

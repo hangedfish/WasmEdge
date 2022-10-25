@@ -104,7 +104,7 @@ if(WASMEDGE_BUILD_SHARED_LIB)
   endif()
 
   target_link_libraries(wasmedge_shared
-    PRIVATE
+    PUBLIC
     wasmedgeCAPI
   )
   target_link_libraries(wasmedge_shared

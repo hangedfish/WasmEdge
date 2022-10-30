@@ -5,13 +5,32 @@ set(CMAKE_C_STANDARD 11)
 set(TARGET wasmedge_jni)
 
 find_package(JNI REQUIRED)
+include_directories(${JNI_INCLUDE_DIRS})
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
-find_package(WasmEdge REQUIRED)
 configure_file(wasmedge-version.properties.in ${CMAKE_CURRENT_BINARY_DIR}/wasmedge-version.properties)
 
+find_package(WasmEdge QUIET)
 
-include_directories(${JNI_INCLUDE_DIRS} ${WasmEdge_INCLUDE_DIRS})
+if (${WasmEdge_FOUND})
+        include_directories(${WasmEdge_INCLUDE_DIRS})
+        list(APPEND needed_libs ${WasmEdge_LIBRARIES})
+else()
+        unset(WasmEdge_INCLUDE_DIRS-NOTFOUND CACHE)
+        get_filename_component(WASMEDGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../.. ABSOLUTE)
+        set(WASMEDGE_BUILD_AOT_RUNTIME OFF CACHE BOOL "" FORCE)
+        set(WASMEDGE_BUILD_PLUGINS OFF CACHE BOOL "" FORCE)
+        set(WASMEDGE_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+        set(WASMEDGE_BUILD_SHARED_LIB ON CACHE BOOL "" FORCE)
+        set(WASMEDGE_FORCE_DISABLE_LTO ON CACHE BOOL "" FORCE)
+        if (CMAKE_GENERATOR STREQUAL Ninja)
+                set(CMAKE_JOB_POOLS "link=2")
+                set(CMAKE_JOB_POOL_LINK link)
+        endif()
+        add_subdirectory(${WASMEDGE_SOURCE_DIR} WasmEdge)
+        list(APPEND needed_libs wasmedge_shared)
+        include_directories(${WasmEdge_BINARY_DIR}/include/api)
+endif()
 
 add_library(${TARGET} SHARED
         lib/WasmEdge.c
@@ -49,7 +68,7 @@ add_library(${TARGET} SHARED
         lib/WasmEdgeAsync.h
         lib/WasmEdgeAsync.c)
 
-target_link_libraries(${TARGET} ${WasmEdge_LIBRARIES})
+target_link_libraries(${TARGET} ${needed_libs})
 
 install(TARGETS ${TARGET}
         LIBRARY DESTINATION lib)
